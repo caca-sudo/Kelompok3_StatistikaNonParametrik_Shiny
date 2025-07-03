@@ -3,8 +3,11 @@
 library(shiny)
 library(ggplot2)
 library(tseries)
+library(readxl)
+
 
 # UI
+# Dashboard
 ui <- navbarPage("Uji Statistik Nonparametrik",
                  tabPanel("Dashboard",
                           fluidPage(style = "background-color: #e6f2ff; padding: 20px;",
@@ -19,6 +22,9 @@ ui <- navbarPage("Uji Statistik Nonparametrik",
                                     ),
                                     h4("Catatan Penting:"),
                                     p(strong("🔸 Aplikasi ini hanya berlaku untuk sampel kecil, yaitu jumlah data tidak boleh melebihi 30 pengamatan.")),
+                                    p(strong("🔸 File yang diunggah pada aplikasi ini, hanyalah file-file tertentu yang sesuai dengan uji yang disediakan.")),
+                                    p(strong("🔸 Aplikasi ini tidak bisa menggunggah file data yang bersifat umum / global / big data.")),
+                                    p(strong("🔸 Setiap jenis uji menggunakan file yang berbeda.")),
                                     h4("Petunjuk Penggunaan:"),
                                     p("1. Pilih jenis kasus yang ingin diuji."),
                                     p("2. Pilih jenis data (nominal atau ordinal)."),
@@ -34,7 +40,7 @@ ui <- navbarPage("Uji Statistik Nonparametrik",
                                         radioButtons("jenis_data_satu", "Pilih Jenis Data:",
                                                      choices = c("Nominal", "Ordinal")),
                                         uiOutput("uji_pilihan_satu"),
-                                        fileInput("data_satu", "Unggah Data (.csv)"),
+                                        fileInput("data_satu", "Unggah Data (.csv atau xlsx)", accept = c(".csv", ".xlsx")),
                                         actionButton("ok_satu", "OK")
                                       ),
                                       mainPanel(
@@ -52,7 +58,7 @@ ui <- navbarPage("Uji Statistik Nonparametrik",
                                       sidebarPanel(
                                         radioButtons("jenis_data_berhubungan", "Jenis Data", choices = c("Nominal", "Ordinal")),
                                         uiOutput("uji_berhubungan"),
-                                        fileInput("data_dua_berhubungan", "Upload Data CSV"),
+                                        fileInput("data_dua_berhubungan", "Upload Data (CSV atau XLSX)", accept = c(".csv", ".xlsx")),
                                         actionButton("ok_berhubungan", "OK")
                                       ),
                                       mainPanel(
@@ -71,7 +77,7 @@ ui <- navbarPage("Uji Statistik Nonparametrik",
                                         radioButtons("jenis_data_indep", "Pilih Jenis Data:",
                                                      choices = c("Nominal", "Ordinal")),
                                         uiOutput("uji_pilihan_indep"),
-                                        fileInput("data_indep", "Unggah Data (.csv)"),
+                                        fileInput("data_indep", "Unggah Data (.csv atau xlsx)", accept = c(".csv", ".xlsx")),
                                         actionButton("ok_indep", "OK")
                                       ),
                                       mainPanel(
@@ -83,11 +89,19 @@ ui <- navbarPage("Uji Statistik Nonparametrik",
                  )
 )
 
+
 # Server 
 server <- function(input, output, session) {
+  
+  # Server Kasus Satu Sampel
   dataInputSatu <- reactive({
     req(input$data_satu)
-    df <- read.csv(input$data_satu$datapath)
+    ext <- tools::file_ext(input$data_satu$name)
+    if (ext == "csv") {
+      df <- read_csv(input$data_satu$datapath)
+    } else if (ext == "xlsx") {
+      df <- read_excel(input$data_satu$datapath)
+    } 
     if (nrow(df) > 30) return(NULL)
     return(df)
   })
@@ -228,10 +242,16 @@ server <- function(input, output, session) {
       })
     }
   })
+  
   # SERVER: Kasus Dua Sampel Berhubungan
   dataInputBerhubungan <- reactive({
     req(input$data_dua_berhubungan)
-    df <- read.csv(input$data_dua_berhubungan$datapath)
+    ext <- tools::file_ext(input$data_satu$name)
+    if (ext == "csv") {
+      df <- read_csv(input$data_satu$datapath)
+    } else if (ext == "xlsx") {
+      df <- read_excel(input$data_satu$datapath)
+    } 
     if (nrow(df) > 30) return(NULL)
     return(df)
   })
@@ -385,7 +405,12 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
   # SERVER: Kasus Dua Sampel Independen
   dataInputIndep <- reactive({
     req(input$data_indep)
-    df <- read.csv(input$data_indep$datapath)
+    ext <- tools::file_ext(input$data_indep$name)
+    if (ext == "csv") {
+      df <- read_csv(input$data_indep$datapath)
+    } else if (ext == "xlsx") {
+      df <- read_excel(input$data_indep$datapath)
+    } 
     if (nrow(df) > 30) return(NULL)
     return(df)
   })
@@ -663,6 +688,7 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
     }
   })
 }
+
 
 # Run App
 shinyApp(ui = ui, server = server)
