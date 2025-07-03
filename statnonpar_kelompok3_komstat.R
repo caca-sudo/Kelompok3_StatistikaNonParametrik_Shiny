@@ -410,6 +410,8 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
   observeEvent(input$ok_indep, {
     df <- dataInputIndep()
     req(df)
+    x <- df[[1]]
+    y <- df[[2]]
     
     # ==== UJI CHI-SQUARE UNTUK NOMINAL, DUA SAMPEL INDEPENDEN ====
     if (input$jenis_data_indep == "Nominal" && input$uji_nominal_indep == "chisq") {
