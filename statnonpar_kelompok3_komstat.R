@@ -587,6 +587,9 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
         output$plot_indep <- renderPlot(NULL)
         return()
       }
+      x <- df[[1]]
+      y <- df[[2]]
+
       x <- suppressWarnings(as.numeric(as.character(x)))
       y <- suppressWarnings(as.numeric(as.character(y)))
       
