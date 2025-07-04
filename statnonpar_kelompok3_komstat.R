@@ -492,6 +492,9 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
         output$plot_indep <- renderPlot(NULL)
         return()
       }
+      x <- df[[1]]
+      y <- df[[2]]
+
       x <- suppressWarnings(as.numeric(as.character(x)))
       y <- suppressWarnings(as.numeric(as.character(y)))
       
@@ -539,9 +542,11 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
         output$plot_indep <- renderPlot(NULL)
         return()
       }
+      x <- df[[1]]
+      y <- df[[2]]
+
       x <- suppressWarnings(as.numeric(as.character(x)))
       y <- suppressWarnings(as.numeric(as.character(y)))
-      
       if (any(is.na(x)) || any(is.na(y))) {
         output$hasil_uji_indep <- renderPrint({
           cat("❌ Data harus berupa angka (ordinal bersifat numerik).")
@@ -625,6 +630,9 @@ Kesimpulan: Tidak ada bukti perbedaan signifikan
         output$plot_indep <- renderPlot(NULL)
         return()
       }
+      x <- df[[1]]
+      y <- df[[2]]
+
       x <- suppressWarnings(as.numeric(as.character(x)))
       y <- suppressWarnings(as.numeric(as.character(y)))
       
