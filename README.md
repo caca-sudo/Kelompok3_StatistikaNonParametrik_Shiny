@@ -1,7 +1,8 @@
 **Aplikasi Uji Statistik Nonparametrik**
 
 Aplikasi ini dikembangkan menggunakan **R Shiny** untuk memfasilitasi analisis uji statistik nonparametrik secara interaktif. 
-**🧩Fitur Utama**
+
+**🧩Fitur Utama aplikasi:**
 
 **Kasus Satu Sampel**:
   - Uji Binomial (Nominal)
@@ -22,5 +23,5 @@ Aplikasi ini dikembangkan menggunakan **R Shiny** untuk memfasilitasi analisis u
   - Wald–Wolfowitz Runs Test (Ordinal)
 
 **Catatan Penting:**
-- Aplikasi ini tidak menerima data dengan jumlah observasi lebih dari 30.
+- Aplikasi ini tidak menerima data dengan jumlah observasi > 30.
 - File yang diunggah harus dalam format .csv, dengan struktur kolom yang sesuai dengan jenis uji yang dipilih.
