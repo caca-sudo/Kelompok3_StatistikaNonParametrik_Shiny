@@ -1,0 +1,10 @@
+name: file_komstat
+title:
+username: anastasya
+account: anastasya
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15031473
+bundleId: 10563081
+url: https://anastasya.shinyapps.io/file_komstat/
+version: 1
