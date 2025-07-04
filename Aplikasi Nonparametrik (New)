@@ -1,0 +1,1251 @@
+# APLIKASI SHINY – UJI STATISTIKA NONPARAMETRIK 
+
+library(shiny)
+library(shinythemes)
+library(bslib)
+library(fontawesome)
+library(DT)
+library(plotly)
+library(ggplot2)
+library(readxl)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(coin)
+library(lawstat)
+
+
+ui <- navbarPage( 
+  title = div(icon("chart-bar"), "Uji Statistik Nonparametrik"),
+  theme = bs_theme(bootswatch = "flatly", base_font = font_google("Poppins")),
+  
+  tags$head(
+    tags$style(HTML("
+      body { padding-top: 5px; }
+      h3, h4 { color: #2c3e50; font-weight: bold; }
+      .main-panel { padding: 10px; background-color: #ffffff; }
+    "))
+  ),
+  
+  # Tab Dashboard 
+  tabPanel("Dashboard",
+           fluidPage(
+             style = "background-color: #f9f9f9;",
+             fluidRow(
+               column(12,
+                      h2("Selamat Datang di Aplikasi Uji Statistik Nonparametrik"),
+                      p("Aplikasi ini dirancang untuk membantu Anda memahami dan menerapkan uji statistik nonparametrik secara interaktif dan sistematis."),
+                      tags$hr(),
+                      h4("Fitur Utama"),
+                      tags$ul(
+                        tags$li("Berbagai jenis uji nonparametrik untuk data ordinal dan nominal"),
+                        tags$li("Visualisasi interaktif dengan interpretasi otomatis"),
+                        tags$li("Panduan penggunaan langkah demi langkah")
+                      ),
+                      tags$hr(),
+                      h4("Navigasi Aplikasi"),
+                      tags$ol(
+                        tags$li("Satu Sampel: Binomial, Chi-Square, dan Run Test"),
+                        tags$li("Dua Sampel Berpasangan: Wilcoxon, McNemar, dan Sign Test"),
+                        tags$li("Dua Sampel Independen: Mann-Whitney, Chi-Square, dll"),
+                        tags$li("Teori: Penjelasan dasar statistika nonparametrik dan visualisasi")
+                      ),
+                      tags$hr(),
+                      h4("Petunjuk Singkat"),
+                      tags$ol(
+                        tags$li("Upload data (format .csv / .xlsx) di tab yang sesuai"),
+                        tags$li("Pilih jenis data, uji, dan variabel"),
+                        tags$li("Klik 'Jalankan Uji' untuk melihat hasil dan interpretasi")
+                      )
+               )
+             )
+           )
+  ),
+  
+  # Tab Kasus Satu Sampel 
+  tabPanel("Satu Sampel",
+           fluidPage(
+             style = "background-color: #ffffff;",
+             h3("Uji Satu Sampel"),
+             p("Silakan unggah data dan pilih metode uji yang sesuai."),
+             sidebarLayout(
+               sidebarPanel(
+                 fileInput("file_data_nonpar", "Upload Data (.csv/.xlsx)", accept = c(".csv", ".xlsx")),
+                 selectInput("tipe_data_satu", "Jenis Data", choices = c("Ordinal", "Nominal")),
+                 uiOutput("uji_satu_ui"),
+                 uiOutput("var_satu_ui"),
+                 uiOutput("opsi_satu"),
+                 numericInput("alpha_satu", "Taraf Signifikansi (α)", value = 0.05, min = 0.001, max = 0.1, step = 0.001),
+                 actionButton("run_uji_satu", "Jalankan Uji", icon = icon("play"), class = "btn btn-primary")
+               ),
+               mainPanel(
+                 class = "main-panel",
+                 h4("Data Anda"), DTOutput("preview_satu"), tags$hr(),
+                 h4("Statistik Deskriptif"), verbatimTextOutput("summary_satu"), tags$hr(),
+                 h4("Hipotesis"), uiOutput("hipotesis_satu"), tags$hr(),
+                 h4("Rumus / Konsep Uji"), verbatimTextOutput("rumus_satu"), tags$hr(),
+                 h4("Hasil Uji Statistik"), verbatimTextOutput("hasil_satu"), tags$hr(),
+                 h4("Kesimpulan & Interpretasi"), uiOutput("kesimpulan_satu"), tags$hr(),
+                 h4("Visualisasi"), plotlyOutput("plot_satu"), tags$hr(),
+                 h4("Interpretasi Visualisasi"), uiOutput("interpretasi_plot_satu")
+               )
+             )
+           )
+  ),
+  
+  # Tab Dua Sampel Berpasangan
+  tabPanel("Dua Sampel Berpasangan",
+           fluidPage(
+             style = "background-color: #ffffff;",
+             h3("Uji Dua Sampel Berpasangan"),
+             p("Gunakan uji ini saat dua variabel berpasangan (misalnya sebelum dan sesudah perlakuan)."),
+             sidebarLayout(
+               sidebarPanel(
+                 fileInput("file_data_nonpar", "Upload Data (.csv/.xlsx)", accept = c(".csv", ".xlsx")),
+                 selectInput("tipe_data_berpasangan", "Jenis Data", choices = c("Ordinal", "Nominal")),
+                 uiOutput("uji_berpasangan_ui"),
+                 uiOutput("var1_berpasangan_ui"),
+                 uiOutput("var2_berpasangan_ui"),
+                 numericInput("alpha_berpasangan", "Taraf Signifikansi (α)", value = 0.05, min = 0.001, max = 0.1, step = 0.001),
+                 actionButton("run_uji_berpasangan", "Jalankan Uji", icon = icon("play"), class = "btn btn-primary")
+               ),
+               mainPanel(
+                 class = "main-panel",
+                 h4("Data Anda"), DTOutput("preview_berpasangan"), tags$hr(),
+                 h4("Statistik Deskriptif"), verbatimTextOutput("summary_berpasangan"), tags$hr(),
+                 h4("Hipotesis"), uiOutput("hipotesis_berpasangan"), tags$hr(),
+                 h4("Rumus / Konsep Uji"), verbatimTextOutput("rumus_berpasangan"), tags$hr(),
+                 h4("Hasil Uji Statistik"), verbatimTextOutput("hasil_berpasangan"), tags$hr(),
+                 h4("Kesimpulan & Interpretasi"), uiOutput("kesimpulan_berpasangan"), tags$hr(),
+                 h4("Visualisasi"), plotlyOutput("plot_berpasangan"), tags$hr(),
+                 h4("Interpretasi Visualisasi"), uiOutput("interpretasi_berpasangan")
+               )
+             )
+           )
+  ),
+  
+  # Tab Dua Sampel Independen
+  tabPanel("Dua Sampel Independen",
+           fluidPage(
+             style = "background-color: #ffffff;",
+             h3("Uji Dua Sampel Independen"),
+             p("Pilih jenis data dan uji yang sesuai untuk membandingkan dua kelompok berbeda."),
+             sidebarLayout(
+               sidebarPanel(
+                 fileInput("file_data_nonpar", "Upload Data (.csv/.xlsx)", accept = c(".csv", ".xlsx")),
+                 selectInput("tipe_data_independen", "Jenis Data", choices = c("Ordinal", "Nominal")),
+                 uiOutput("uji_independen_ui"),
+                 uiOutput("var1_independen_ui"),
+                 uiOutput("var2_independen_ui"),
+                 numericInput("alpha_independen", "Taraf Signifikansi (α)", value = 0.05, min = 0.001, max = 0.1, step = 0.001),
+                 actionButton("run_uji_independen", "Jalankan Uji", icon = icon("play"), class = "btn btn-primary")
+               ),
+               mainPanel(
+                 class = "main-panel",
+                 h4("Data Anda"), DTOutput("preview_independen"), tags$hr(),
+                 h4("Statistik Deskriptif"), verbatimTextOutput("summary_independen"), tags$hr(),
+                 h4("Hipotesis"), uiOutput("hipotesis_independen"), tags$hr(),
+                 h4("Rumus / Konsep Uji"), verbatimTextOutput("rumus_independen"), tags$hr(),
+                 h4("Hasil Uji Statistik"), verbatimTextOutput("hasil_independen"), tags$hr(),
+                 h4("Kesimpulan & Interpretasi"), uiOutput("kesimpulan_independen"), tags$hr(),
+                 h4("Visualisasi"), plotlyOutput("plot_independen"), tags$hr(),
+                 h4("Interpretasi Visualisasi"), uiOutput("interpretasi_independen")
+               )
+             )
+           )
+  ),
+  
+  # Tab Teori
+  tabPanel("Teori",
+           fluidPage(
+             style = "background-color: #ffffff;",
+             h3("Teori Statistik Nonparametrik & Visualisasi"),
+             tabsetPanel(
+               tabPanel("Visualisasi Data",
+                        br(),
+                        p("Visualisasi data menyajikan informasi dalam bentuk grafis untuk memudahkan pemahaman."),
+                        tags$ul(
+                          tags$li("Membantu mengungkap pola dan tren"),
+                          tags$li("Mendukung pengambilan keputusan berbasis data"),
+                          tags$li("Menjelaskan hasil analisis statistik")
+                        ),
+                        tags$hr(),
+                        tags$b("Referensi: "),
+                        a("SAS - Data Visualization", href = "https://www.sas.com/en_us/insights/big-data/data-visualization.html", target = "_blank")
+               ),
+               tabPanel("Statistika Nonparametrik",
+                        br(),
+                        p("Statistika nonparametrik digunakan saat data tidak memenuhi asumsi distribusi normal."),
+                        tags$ul(
+                          tags$li("Cocok untuk data ordinal dan nominal"),
+                          tags$li("Tidak memerlukan asumsi distribusi populasi"),
+                          tags$li("Lebih robust terhadap pencilan (outlier)")
+                        ),
+                        tags$hr(),
+                        tags$b("Referensi: "),
+                        a("Statorials - Nonparametrik", href = "https://statorials.org/id/statistik-non-parametrik/", target = "_blank")
+               )
+             )
+           )
+  )
+)
+
+
+server <- function(input, output, session) {
+  
+  # PANEL 1: UJI SATU SAMPEL
+  
+  # Fungsi baca file
+  baca_file <- function(input_file) {
+    ext <- tools::file_ext(input_file$name)
+    if (ext == "csv") {
+      read.csv(input_file$datapath)
+    } else {
+      readxl::read_excel(input_file$datapath)
+    }
+  }
+  
+  # Data reaktif
+  data_satu <- reactive({
+    req(input$file_data_nonpar)
+    baca_file(input$file_data_nonpar)
+  })
+  
+  # UI Pilihan Uji berdasarkan tipe data
+  output$uji_satu_ui <- renderUI({
+    req(input$tipe_data_satu)
+    if (input$tipe_data_satu == "Nominal") {
+      selectInput("uji_satu", "Pilih Jenis Uji", choices = c("Uji Binomial", "Chi-Square Satu Sampel"))
+    } else {
+      selectInput("uji_satu", "Pilih Jenis Uji", choices = c("Run Test"))
+    }
+  })
+  
+  # UI Pilih Variabel berdasarkan jenis uji
+  output$var_satu_ui <- renderUI({
+    req(data_satu(), input$uji_satu)
+    df <- data_satu()
+    
+    if (input$uji_satu %in% c("Uji Binomial", "Chi-Square Satu Sampel")) {
+      var_kategorik <- names(df)[sapply(df, function(x) is.character(x) || is.factor(x))]
+      selectInput("var1_satu", "Pilih Variabel Kategorik", choices = var_kategorik)
+      
+    } else if (input$uji_satu == "Run Test") {
+      var_numerik <- names(df)[sapply(df, is.numeric)]
+      selectInput("var1_satu", "Pilih Variabel Numerik", choices = var_numerik)
+    }
+  })
+  
+  # Tabel dan summary
+  output$preview_satu <- renderDT({ datatable(head(data_satu(), 10)) })
+  output$summary_satu <- renderPrint({ summary(data_satu()) })
+  
+  # Hipotesis
+  output$hipotesis_satu <- renderUI({
+    req(input$uji_satu)
+    
+    if (input$uji_satu == "Uji Binomial") {
+      HTML(paste0(
+        "<b>📌 Hipotesis Uji Binomial:</b><br><br>",
+        "Uji binomial digunakan untuk menguji apakah proporsi keberhasilan (p) dalam sampel berbeda secara signifikan dari suatu nilai tertentu (biasanya 0.5).<br><br>",
+        "<b>H₀ (Hipotesis Nol):</b> Proporsi keberhasilan sama dengan 0.5 (p = 0.5).<br>",
+        "<b>H₁ (Hipotesis Alternatif):</b> Proporsi keberhasilan tidak sama dengan 0.5 (p ≠ 0.5).<br><br>"
+      ))
+      
+    } else if (input$uji_satu == "Chi-Square Satu Sampel") {
+      HTML(paste0(
+        "<b>📌 Hipotesis Uji Chi-Square Satu Sampel:</b><br><br>",
+        "Uji ini digunakan untuk membandingkan distribusi kategori dalam sampel dengan distribusi teoritis atau harapan tertentu.<br><br>",
+        "<b>H₀ (Hipotesis Nol):</b> Proporsi kategori dalam data sesuai dengan proporsi yang diharapkan (tidak ada perbedaan).<br>",
+        "<b>H₁ (Hipotesis Alternatif):</b> Proporsi kategori dalam data berbeda secara signifikan dari yang diharapkan.<br><br>"
+      ))
+      
+    } else if (input$uji_satu == "Run Test") {
+      HTML(paste0(
+        "<b>📌 Hipotesis Run Test (Uji Keacakan):</b><br><br>",
+        "Run Test digunakan untuk menguji apakah urutan data dalam sampel acak atau menunjukkan pola tertentu.<br><br>",
+        "<b>H₀ (Hipotesis Nol):</b> Urutan data acak (tidak ada pola).<br>",
+        "<b>H₁ (Hipotesis Alternatif):</b> Urutan data tidak acak (ada pola tertentu).<br><br>"
+      ))
+    }
+  })
+  
+  # Rumus
+  output$rumus_satu <- renderText({
+    req(input$uji_satu)
+    
+    if (input$uji_satu == "Uji Binomial") {
+      paste0(
+        "📘 Rumus Uji Binomial:\n",
+        "P(X = k) = C(n, k) × p^k × (1 - p)^(n - k)\n\n",
+        "→ Di mana:\n",
+        "- n = jumlah total percobaan\n",
+        "- k = jumlah keberhasilan\n",
+        "- p = probabilitas keberhasilan (biasanya 0.5)"
+      )
+      
+    } else if (input$uji_satu == "Chi-Square Satu Sampel") {
+      paste0(
+        "📘 Rumus Uji Chi-Square Satu Sampel:\n",
+        "χ² = Σ((Oᵢ - Eᵢ)² / Eᵢ)\n\n",
+        "→ Di mana:\n",
+        "- Oᵢ = frekuensi yang diamati\n",
+        "- Eᵢ = frekuensi yang diharapkan"
+      )
+      
+    } else if (input$uji_satu == "Run Test") {
+      paste0(
+        "📘 Langkah Run Test (Uji Keacakan):\n",
+        "1. Ubah data menjadi deret tanda (misal, di atas atau di bawah median).\n",
+        "2. Hitung jumlah run (pergantian tanda).\n",
+        "3. Hitung nilai ekspektasi dan standar deviasi run.\n",
+        "4. Gunakan distribusi normal untuk menghitung nilai z dan p-value."
+      )
+    }
+  })
+  
+  # Hasil Uji
+  output$hasil_satu <- renderPrint({
+    req(data_satu(), input$var1_satu)
+    df <- data_satu()
+    
+    if (input$uji_satu == "Uji Binomial") {
+      x <- df[[input$var1_satu]]
+      tab <- table(x)
+      if (length(tab) != 2) {
+        cat("❌ Uji Binomial hanya untuk 2 kategori.")
+      } else {
+        cat("Kategorinya adalah:\n")
+        print(tab)
+        cat("Menggunakan jumlah kejadian untuk kategori pertama sebagai 'success'\n")
+        success <- tab[1]
+        total <- sum(tab)
+        print(binom.test(success, total, p = 0.5))
+      }
+      
+    } else if (input$uji_satu == "Chi-Square Satu Sampel") {
+      x <- df[[input$var1_satu]]
+      tab <- table(x)
+      expected <- rep(1 / length(tab), length(tab))
+      chisq.test(tab, p = expected)
+      print(chisq.test(tab, p = expected / sum(expected)))
+      
+    } else if (input$uji_satu == "Run Test") {
+      x <- df[[input$var1_satu]]
+      x <- na.omit(df[[input$var1_satu]])
+      median_x <- median(x)
+      median_x <- median(x, na.rm = TRUE)
+      tanda <- ifelse(x > median_x, "+", ifelse(x < median_x, "-", NA))
+      tanda <- tanda[!is.na(tanda)]
+      
+      run_count <- 1 + sum(tanda[-1] != tanda[-length(tanda)])
+      n1 <- sum(tanda == "+")
+      n2 <- sum(tanda == "-")
+      
+      if (n1 == 0 || n2 == 0) {
+        cat("❌ Tidak dapat dilakukan karena hanya ada satu jenis tanda.")
+      } else {
+        mean_run <- 2 * n1 * n2 / (n1 + n2) + 1
+        sd_run <- sqrt((2 * n1 * n2 * (2 * n1 * n2 - n1 - n2)) /
+                         ((n1 + n2)^2 * (n1 + n2 - 1)))
+        z <- (run_count - mean_run) / sd_run
+        p_val <- 2 * pnorm(-abs(z))
+        
+        cat("Jumlah Run:", run_count, "\n")
+        cat("E(Run):", round(mean_run, 3), " SD:", round(sd_run, 3), "\n")
+        cat("Z:", round(z, 3), "  P-value:", round(p_val, 4), "\n")
+      }
+    }
+  })
+  
+  # Kesimpulan dan interpretasi
+  output$kesimpulan_satu <- renderUI({
+    req(data_satu(), input$var1_satu)
+    df <- data_satu()
+    alpha <- input$alpha_satu
+    pval <- NULL
+    result <- NULL
+    
+    if (input$uji_satu == "Uji Binomial") {
+      x <- df[[input$var1_satu]]
+      tab <- table(x)
+      success <- min(tab)  # diasumsikan dua kategori
+      total <- sum(tab)
+      result <- binom.test(success, total, p = 0.5)
+      pval <- result$p.value
+      
+      if (pval < alpha) {
+        HTML(paste0(
+          "<b>🔍 Uji Binomial</b><br>",
+          "<span style='color:#d9534f;'>• P-value = ", round(pval, 4), " < α = ", alpha, 
+          " → Keputusan: <b>Tolak H₀</b></span><br><br>",
+          "📌 <b>Interpretasi:</b><br>",
+          "Terdapat bukti statistik yang cukup untuk menyimpulkan bahwa proporsi dua kategori dalam data tidak seimbang.<br>",
+          "Dengan kata lain, data menunjukkan perbedaan nyata antara jumlah kategori (misal tanda positif dan negatif)."
+        ))
+      } else {
+        HTML(paste0(
+          "<b>🔍 Uji Binomial</b><br>",
+          "<span style='color:#5bc0de;'>• P-value = ", round(pval, 4), " ≥ α = ", alpha, 
+          " → Keputusan: <b>Gagal Tolak H₀</b></span><br><br>",
+          "📌 <b>Interpretasi:</b><br>",
+          "Tidak ditemukan bukti statistik yang cukup untuk menyimpulkan adanya perbedaan proporsi.<br>",
+          "Artinya, jumlah kategori dalam data dapat dianggap seimbang (misalnya, tanda positif dan negatif seimbang)."
+        ))
+      }
+      
+    } else if (input$uji_satu == "Chi-Square Satu Sampel") {
+      x <- df[[input$var1_satu]]
+      tab <- table(x)
+      expected <- rep(sum(tab) / length(tab), length(tab))  # asumsi distribusi merata
+      result <- chisq.test(tab, p = expected / sum(expected))
+      pval <- result$p.value
+      
+      if (pval < alpha) {
+        HTML(paste0(
+          "<b>🔍 Uji Chi-Square Satu Sampel</b><br>",
+          "<span style='color:#d9534f;'>• P-value = ", round(pval, 4), " < α = ", alpha,
+          " → Keputusan: <b>Tolak H₀</b></span><br><br>",
+          "📌 <b>Interpretasi:</b><br>",
+          "Terdapat perbedaan signifikan antara distribusi data yang diamati dengan distribusi yang diharapkan.<br>",
+          "Ini berarti frekuensi dalam tiap kategori tidak sesuai dengan proporsi teoritis yang diharapkan."
+        ))
+      } else {
+        HTML(paste0(
+          "<b>🔍 Uji Chi-Square Satu Sampel</b><br>",
+          "<span style='color:#5bc0de;'>• P-value = ", round(pval, 4), " ≥ α = ", alpha,
+          " → Keputusan: <b>Gagal Tolak H₀</b></span><br><br>",
+          "📌 <b>Interpretasi:</b><br>",
+          "Distribusi data yang diamati tidak berbeda secara signifikan dengan distribusi yang diharapkan.<br>",
+          "Artinya, data dapat dianggap sesuai dengan proporsi teoritis."
+        ))
+      }
+      
+    } else if (input$uji_satu == "Run Test") {
+      x <- df[[input$var1_satu]]
+      median_x <- median(x, na.rm = TRUE)
+      tanda <- ifelse(x > median_x, "+", ifelse(x < median_x, "-", NA))
+      tanda <- tanda[!is.na(tanda)]
+      run_count <- 1 + sum(tanda[-1] != tanda[-length(tanda)])
+      n1 <- sum(tanda == "+")
+      n2 <- sum(tanda == "-")
+      
+      if (n1 == 0 || n2 == 0) {
+        HTML("<b>❌ Run Test tidak dapat dijalankan:</b><br>Data hanya memiliki satu jenis tanda (tidak ada variasi).")
+      } else {
+        mean_run <- 2 * n1 * n2 / (n1 + n2) + 1
+        sd_run <- sqrt((2 * n1 * n2 * (2 * n1 * n2 - n1 - n2)) / ((n1 + n2)^2 * (n1 + n2 - 1)))
+        z <- (run_count - mean_run) / sd_run
+        pval <- 2 * pnorm(-abs(z))
+        
+        if (pval < alpha) {
+          HTML(paste0(
+            "<b>🔍 Run Test</b><br>",
+            "<span style='color:#d9534f;'>• P-value = ", round(pval, 4), " < α = ", alpha,
+            " → Keputusan: <b>Tolak H₀</b></span><br><br>",
+            "📌 <b>Interpretasi:</b><br>",
+            "Urutan data <b>tidak acak</b>. Artinya, terdapat pola tertentu atau struktur sistematis dalam urutan data.<br>",
+            "Ini bisa menunjukkan adanya tren atau pengaruh sistematik dalam data."
+          ))
+        } else {
+          HTML(paste0(
+            "<b>🔍 Run Test</b><br>",
+            "<span style='color:#5bc0de;'>• P-value = ", round(pval, 4), " ≥ α = ", alpha,
+            " → Keputusan: <b>Gagal Tolak H₀</b></span><br><br>",
+            "📌 <b>Interpretasi:</b><br>",
+            "Urutan data dapat dianggap <b>acak</b>. Tidak ditemukan pola khusus atau kecenderungan dalam run tanda.<br>",
+            "Data kemungkinan besar berasal dari proses acak atau bebas pengaruh sistematik."
+          ))
+        }
+      }
+    }
+  })
+  
+  # Visualisasi Otomatis
+  output$plot_satu <- renderPlotly({
+    req(data_satu(), input$var1_satu)
+    df <- data_satu()
+    var <- df[[input$var1_satu]]
+    
+    if (input$uji_satu == "Uji Binomial") {
+      plot <- ggplot(df, aes_string(x = input$var1_satu)) +
+        geom_bar(fill = "#3498db") +
+        labs(title = "Distribusi Kategori", x = "Kategori", y = "Frekuensi") +
+        theme_minimal()
+      
+    } else if (input$uji_satu == "Chi-Square Satu Sampel") {
+      plot <- ggplot(df, aes_string(x = input$var1_satu)) +
+        geom_bar(fill = "#9b59b6") +
+        labs(title = "Distribusi Observasi", x = "Kategori", y = "Frekuensi") +
+        theme_minimal()
+      
+    } else if (input$uji_satu == "Run Test") {
+      df$index <- 1:nrow(df)
+      plot <- ggplot(df, aes(x = index, y = .data[[input$var1_satu]])) +
+        geom_line(color = "#e67e22") +
+        geom_hline(yintercept = median(df[[input$var1_satu]], na.rm = TRUE),
+                   linetype = "dashed", color = "red") +
+        labs(title = "Urutan Nilai Data (Run Test)", x = "Index", y = "Nilai") +
+        theme_minimal()
+    }
+    
+    ggplotly(plot)
+  })
+  
+  # INTERPRETASI VISUALISASI 
+  output$interpretasi_plot_satu <- renderUI({
+    req(data_satu(), input$var1_satu)
+    df <- data_satu()
+    var <- df[[input$var1_satu]]
+    
+    if (input$uji_satu == "Uji Binomial") {
+      tab <- table(var)
+      kategori <- names(tab)
+      frek <- as.numeric(tab)
+      prop <- round(frek / sum(frek), 2)
+      
+      HTML(paste0(
+        "<b>📊 Interpretasi Bar Plot (Uji Binomial):</b><br><br>",
+        "Grafik batang (bar plot) menampilkan jumlah kemunculan masing-masing kategori.<br>",
+        "Tujuan visualisasi ini adalah untuk menunjukkan apakah terdapat keseimbangan proporsi antara dua kategori (misal: sukses vs gagal, ya vs tidak).<br><br>",
+        "<b>📌 Ringkasan Frekuensi:</b><br><ul>",
+        paste0("<li><b>", kategori, "</b>: ", frek, " kejadian (", prop * 100, "%)</li>", collapse = ""),
+        "</ul>",
+        "Jika proporsi kategori sangat berbeda (misalnya salah satu jauh lebih dominan), maka ini dapat mendukung hasil uji bahwa proporsinya tidak seimbang."
+      ))
+      
+    } else if (input$uji_satu == "Chi-Square Satu Sampel") {
+      HTML(paste0(
+        "<b>📊 Interpretasi Bar Plot (Uji Chi-Square Satu Sampel):</b><br><br>",
+        "Grafik batang menampilkan distribusi frekuensi aktual dari masing-masing kategori dalam variabel yang diamati.<br>",
+        "Dalam konteks uji Chi-Square satu sampel, visualisasi ini digunakan untuk membandingkan apakah frekuensi kategori yang diamati berbeda secara signifikan dari distribusi yang diharapkan (misal: distribusi merata atau distribusi historis tertentu).<br><br>",
+        "Perbedaan mencolok dalam tinggi batang antar kategori bisa menjadi indikasi adanya ketidaksesuaian terhadap distribusi teoritis.<br>",
+        "Namun, perbedaan ini perlu divalidasi secara statistik melalui uji Chi-Square."
+      ))
+      
+    } else if (input$uji_satu == "Run Test") {
+      median_x <- median(var, na.rm = TRUE)
+      HTML(paste0(
+        "<b>📈 Interpretasi Line Plot (Run Test):</b><br><br>",
+        "Visualisasi untuk Run Test biasanya berupa garis data dengan garis putus-putus merah sebagai median sampel (", round(median_x, 2), ").<br>",
+        "Run Test menguji keacakan (randomness) dari urutan data. Grafik ini membantu melihat apakah data berubah secara acak di sekitar median atau mengikuti pola tertentu.<br><br>",
+        "Jika terdapat terlalu sedikit atau terlalu banyak perubahan arah (run), hal ini bisa mengindikasikan bahwa urutan data tidak acak (misal: tren naik/turun yang berulang).<br>",
+        "Dengan kata lain, semakin tidak acak pola visual, semakin besar kemungkinan H₀ ditolak."
+      ))
+    }
+  })
+  
+  # PANEL 2: UJI DUA SAMPEL BERPASANGAN 
+  
+  # Fungsi baca file
+  baca_file <- function(input_file) {
+    ext <- tools::file_ext(input_file$name)
+    if (ext == "csv") {
+      read.csv(input_file$datapath)
+    } else {
+      readxl::read_excel(input_file$datapath)
+    }
+  }
+  
+  # Reactive untuk data
+  data_berpasangan <- reactive({
+    req(input$file_data_nonpar)
+    df <- baca_file(input$file_data_nonpar)
+    na.omit(df)  # hilangkan NA
+  })
+  
+  # UI pilihan uji berdasarkan tipe data
+  output$uji_berpasangan_ui <- renderUI({
+    req(input$tipe_data_berpasangan)
+    
+    if (input$tipe_data_berpasangan == "Ordinal") {
+      selectInput("uji_berpasangan", "Pilih Jenis Uji",
+                  choices = c("Uji Wilcoxon Berpasangan", "Sign Test"))
+    } else {
+      selectInput("uji_berpasangan", "Pilih Jenis Uji",
+                  choices = c("Uji McNemar"))
+    }
+  })
+  
+  # UI dinamis untuk pemilihan variabel
+  output$var1_berpasangan_ui <- renderUI({
+    req(data_berpasangan())
+    selectInput("var1_berpasangan", "Variabel Sebelum Perlakuan", choices = names(data_berpasangan()))
+  })
+  
+  output$var2_berpasangan_ui <- renderUI({
+    req(data_berpasangan())
+    selectInput("var2_berpasangan", "Variabel Sesudah Perlakuan", choices = names(data_berpasangan()))
+  })
+  
+  # Tampilkan data dan ringkasan
+  output$preview_berpasangan <- renderDT({
+    req(data_berpasangan())
+    datatable(head(data_berpasangan(), 10))
+  })
+  
+  output$summary_berpasangan <- renderPrint({
+    req(data_berpasangan())
+    summary(data_berpasangan())
+  })
+  
+  # HIPOTESIS
+  output$hipotesis_berpasangan <- renderUI({
+    req(input$uji_berpasangan)
+    
+    teks <- switch(input$uji_berpasangan,
+                   
+                   "Uji Wilcoxon Berpasangan" = paste0(
+                     "<b>📌 Hipotesis Uji Wilcoxon Berpasangan:</b><br><br>",
+                     "Uji ini digunakan untuk membandingkan dua kondisi yang saling berpasangan (misalnya sebelum dan sesudah perlakuan) pada data ordinal atau numerik non-normal.<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Tidak ada perbedaan median antara dua kondisi (Median sebelum = Median sesudah).<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Terdapat perbedaan median antara dua kondisi (Median sebelum ≠ Median sesudah).<br><br>"
+                   ),
+                   
+                   "Uji McNemar" = paste0(
+                     "<b>📌 Hipotesis Uji McNemar:</b><br><br>",
+                     "Uji ini digunakan untuk menguji perubahan proporsi dari dua kondisi yang saling berpasangan pada data kategorik (biasanya 2x2, seperti ya/tidak).<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Tidak ada perubahan proporsi antara dua kondisi (Proporsi sebelum = Proporsi sesudah).<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Terdapat perubahan proporsi antara dua kondisi (Proporsi sebelum ≠ Proporsi sesudah).<br><br>"
+                   ),
+                   
+                   "Sign Test" = paste0(
+                     "<b>📌 Hipotesis Uji Sign Test:</b><br><br>",
+                     "Uji ini digunakan untuk menguji apakah terdapat perbedaan sistematis antara dua kondisi berpasangan berdasarkan arah perbedaan (tanda positif atau negatif).<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Tidak ada perbedaan dalam arah perubahan; jumlah tanda positif ≈ tanda negatif.<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Terdapat perbedaan signifikan dalam jumlah tanda positif dan negatif antara dua kondisi.<br><br>"
+                   )
+    )
+    
+    HTML(teks)
+  })
+  
+  # PENJELASAN METODE
+  output$rumus_berpasangan <- renderText({
+    req(input$uji_berpasangan)
+    
+    switch(input$uji_berpasangan,
+           
+           "Uji Wilcoxon Berpasangan" = paste(
+             "🔧 Langkah-Langkah Uji Wilcoxon Berpasangan:",
+             "1. Hitung selisih antara dua kondisi (nilai sesudah - nilai sebelum).",
+             "2. Abaikan selisih yang bernilai nol.",
+             "3. Hitung nilai absolut dari selisih, lalu beri peringkat (ranking).",
+             "4. Tambahkan tanda positif/negatif pada peringkat sesuai arah selisih.",
+             "5. Jumlahkan peringkat bertanda positif dan bertanda negatif.",
+             "6. Statistik uji adalah jumlah ranking yang lebih kecil dari dua.",
+             "7. Bandingkan dengan nilai tabel Wilcoxon atau gunakan p-value untuk pengambilan keputusan.",
+             sep = "\n"
+           ),
+           
+           "Uji McNemar" = paste(
+             "🔧 Penjelasan Uji McNemar:",
+             "Uji McNemar digunakan untuk data kategorik berpasangan dalam bentuk tabel kontingensi 2x2.",
+             "",
+             "📌 Rumus:",
+             "X² = (|b - c| - 1)² / (b + c)",
+             "",
+             "📌 Keterangan:",
+             "b = jumlah kasus yang berubah dari kategori 1 ke 2",
+             "c = jumlah kasus yang berubah dari kategori 2 ke 1",
+             "",
+             "Bandingkan nilai X² dengan nilai kritis chi-square atau gunakan p-value untuk pengambilan keputusan.",
+             sep = "\n"
+           ),
+           
+           "Sign Test" = paste(
+             "🔧 Langkah-Langkah Uji Sign Test:",
+             "1. Hitung selisih antara dua kondisi (sesudah - sebelum).",
+             "2. Abaikan selisih bernilai 0.",
+             "3. Hitung jumlah tanda positif dan tanda negatif.",
+             "4. Gunakan uji binomial untuk membandingkan jumlah tanda dengan proporsi 0.5.",
+             "",
+             "📌 Rumus Uji Binomial untuk Sign Test:",
+             "P(X = k) = C(n, k) × p^k × (1 - p)^(n - k)",
+             "→ Di mana n = jumlah total tanda (pos + neg), k = jumlah tanda lebih kecil, p = 0.5",
+             sep = "\n"
+           )
+    )
+  })
+  
+  # HASIL UJI
+  output$hasil_berpasangan <- renderPrint({
+    req(data_berpasangan(), input$var1_berpasangan, input$var2_berpasangan)
+    df <- data_berpasangan()
+    
+    if (input$uji_berpasangan == "Uji Wilcoxon Berpasangan") {
+      validate(need(is.numeric(df[[input$var1_berpasangan]]) && is.numeric(df[[input$var2_berpasangan]]),
+                    "Variabel harus numerik untuk Uji Wilcoxon."))
+      wilcox.test(df[[input$var1_berpasangan]], df[[input$var2_berpasangan]], paired = TRUE)
+      
+    } else if (input$uji_berpasangan == "Uji McNemar") {
+      tbl <- table(df[[input$var1_berpasangan]], df[[input$var2_berpasangan]])
+      validate(need(all(dim(tbl) == c(2,2)), "Uji McNemar hanya untuk tabel 2x2."))
+      mcnemar.test(tbl)
+      validate(need(is.factor(df[[input$var1_berpasangan]]) && is.factor(df[[input$var2_berpasangan]]),
+                    "Variabel harus bertipe kategorik (factor) untuk Uji McNemar."))
+      df[[input$var1_berpasangan]] <- as.factor(df[[input$var1_berpasangan]])
+      df[[input$var2_berpasangan]] <- as.factor(df[[input$var2_berpasangan]])
+      
+    } else if (input$uji_berpasangan == "Sign Test") {
+      # Hitung tanda
+      selisih <- df[[input$var2_berpasangan]] - df[[input$var1_berpasangan]]
+      tanda <- selisih[selisih != 0]
+      n <- length(tanda)
+      success <- min(sum(tanda > 0), sum(tanda < 0))
+      binom.test(success, n, p = 0.5, alternative = "two.sided")
+    }
+  })
+  
+  # KESIMPULAN DAN INTERPRETASI
+  output$kesimpulan_berpasangan <- renderUI({
+    req(data_berpasangan(), input$var1_berpasangan, input$var2_berpasangan)
+    df <- data_berpasangan()
+    alpha <- input$alpha_berpasangan
+    pval <- NA
+    keputusan <- ""
+    interpretasi <- ""
+    uji_label <- ""
+    
+    if (input$uji_berpasangan == "Uji Wilcoxon Berpasangan") {
+      validate(need(is.numeric(df[[input$var1_berpasangan]]) && is.numeric(df[[input$var2_berpasangan]]),
+                    "Variabel harus numerik untuk Uji Wilcoxon."))
+      hasil <- wilcox.test(df[[input$var1_berpasangan]], df[[input$var2_berpasangan]], paired = TRUE)
+      pval <- hasil$p.value
+      uji_label <- "Uji Wilcoxon Berpasangan"
+      
+      if (pval < alpha) {
+        keputusan <- "<span style='color:green; font-weight:bold;'>Tolak H₀</span>"
+        interpretasi <- paste0(
+          "Terdapat perbedaan yang signifikan antara nilai sebelum dan sesudah perlakuan berdasarkan median.<br>",
+          "Hal ini menunjukkan bahwa perlakuan atau kondisi kedua memberikan dampak yang berbeda secara statistik."
+        )
+      } else {
+        keputusan <- "<span style='color:orange; font-weight:bold;'>Gagal Tolak H₀</span>"
+        interpretasi <- paste0(
+          "Tidak terdapat bukti statistik yang cukup untuk menyatakan adanya perbedaan median antara dua kondisi.<br>",
+          "Dengan demikian, kedua kondisi dapat dianggap menghasilkan nilai yang relatif sama secara median."
+        )
+      }
+      
+    } else if (input$uji_berpasangan == "Uji McNemar") {
+      # Konversi ke faktor
+      df[[input$var1_berpasangan]] <- as.factor(df[[input$var1_berpasangan]])
+      df[[input$var2_berpasangan]] <- as.factor(df[[input$var2_berpasangan]])
+      
+      validate(need(is.factor(df[[input$var1_berpasangan]]) && is.factor(df[[input$var2_berpasangan]]),
+                    "Variabel harus bertipe kategorik (factor) untuk Uji McNemar."))
+      
+      tbl <- table(df[[input$var1_berpasangan]], df[[input$var2_berpasangan]])
+      validate(need(all(dim(tbl) == c(2, 2)), "Uji McNemar hanya untuk tabel 2x2."))
+      
+      hasil <- mcnemar.test(tbl)
+      pval <- hasil$p.value
+      uji_label <- "Uji McNemar"
+      
+      if (pval < alpha) {
+        keputusan <- "<span style='color:green; font-weight:bold;'>Tolak H₀</span>"
+        interpretasi <- paste0(
+          "Terdapat perbedaan proporsi yang signifikan antara dua kondisi berpasangan (misalnya: sebelum dan sesudah).<br>",
+          "Hal ini menunjukkan bahwa perlakuan atau intervensi dapat memengaruhi hasil secara bermakna."
+        )
+      } else {
+        keputusan <- "<span style='color:orange; font-weight:bold;'>Gagal Tolak H₀</span>"
+        interpretasi <- paste0(
+          "Tidak ditemukan bukti statistik yang cukup untuk menyimpulkan adanya perubahan proporsi.<br>",
+          "Artinya, kondisi sebelum dan sesudah dapat dianggap memiliki proporsi yang sama."
+        )
+      }
+      
+    } else if (input$uji_berpasangan == "Sign Test") {
+      selisih <- df[[input$var2_berpasangan]] - df[[input$var1_berpasangan]]
+      tanda <- selisih[selisih != 0]
+      n <- length(tanda)
+      success <- sum(tanda > 0)
+      hasil <- binom.test(success, n, p = 0.5, alternative = "two.sided")
+      pval <- hasil$p.value
+      uji_label <- "Uji Sign Test"
+      
+      if (pval < alpha) {
+        keputusan <- "<span style='color:green; font-weight:bold;'>Tolak H₀</span>"
+        interpretasi <- paste0(
+          "Terdapat perbedaan arah tanda yang signifikan antara dua kondisi (lebih banyak positif atau negatif).<br>",
+          "Ini berarti kemungkinan ada perubahan yang bermakna antara kondisi awal dan akhir, meskipun tidak dilihat dari besarannya."
+        )
+      } else {
+        keputusan <- "<span style='color:orange; font-weight:bold;'>Gagal Tolak H₀</span>"
+        interpretasi <- paste0(
+          "Tidak cukup bukti untuk menyatakan bahwa arah perubahan (positif atau negatif) berbeda secara signifikan.<br>",
+          "Dengan kata lain, perubahan yang terjadi antar kondisi kemungkinan bersifat acak atau tidak konsisten."
+        )
+      }
+    }
+    
+    HTML(paste0(
+      "<b>🔍 ", uji_label, "</b><br>",
+      "📉 <b>P-value:</b> ", round(pval, 4), " | α = ", alpha, "<br>",
+      "📌 <b>Keputusan:</b> ", keputusan, "<br><br>",
+      "<b>📝 Interpretasi:</b><br>", interpretasi
+    ))
+  })
+  
+  # VISUALISASI
+  output$plot_berpasangan <- renderPlotly({
+    req(data_berpasangan(), input$var1_berpasangan, input$var2_berpasangan)
+    df <- data_berpasangan()
+    
+    if (input$uji_berpasangan == "Uji Wilcoxon Berpasangan" || input$uji_berpasangan == "Sign Test") {
+      validate(need(is.numeric(df[[input$var1_berpasangan]]) && is.numeric(df[[input$var2_berpasangan]]),
+                    "Variabel harus numerik untuk uji ini."))
+      
+      p <- ggplot(df, aes(x = !!sym(input$var1_berpasangan), y = !!sym(input$var2_berpasangan))) +
+        geom_point(color = "steelblue", alpha = 0.7) +
+        geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+        labs(title = "Scatter Plot Sebelum vs Sesudah", x = "Sebelum", y = "Sesudah") +
+        theme_minimal()
+      
+    } else if (input$uji_berpasangan == "Uji McNemar") {
+      tbl <- table(df[[input$var1_berpasangan]], df[[input$var2_berpasangan]])
+      tbl_df <- as.data.frame(tbl)
+      names(tbl_df) <- c("Sebelum", "Sesudah", "Frekuensi")
+      
+      p <- ggplot(tbl_df, aes(x = Sebelum, y = Frekuensi, fill = Sesudah)) +
+        geom_bar(stat = "identity", position = "dodge") +
+        labs(title = "Bar Plot Frekuensi Kategori Sebelum dan Sesudah", x = "Sebelum", y = "Frekuensi") +
+        theme_minimal()
+    }
+    
+    ggplotly(p)
+  })
+  
+  # INTERPRETASI VISUALISASI 
+  output$interpretasi_berpasangan <- renderText({
+    req(data_berpasangan(), input$var1_berpasangan, input$var2_berpasangan)
+    df <- data_berpasangan()
+    uji <- input$uji_berpasangan
+    
+    if (uji == "Uji Wilcoxon Berpasangan" || uji == "Sign Test") {
+      validate(need(is.numeric(df[[input$var1_berpasangan]]) && is.numeric(df[[input$var2_berpasangan]]),
+                    "Variabel harus bertipe numerik untuk uji ini."))
+      
+      median_sebelum <- median(df[[input$var1_berpasangan]], na.rm = TRUE)
+      median_sesudah <- median(df[[input$var2_berpasangan]], na.rm = TRUE)
+      arah <- if (median_sesudah > median_sebelum) "meningkat" else if (median_sesudah < median_sebelum) "menurun" else "tetap"
+      jenis <- if (uji == "Uji Wilcoxon Berpasangan") "Uji Wilcoxon Berpasangan" else "Sign Test"
+      
+      paste0(
+        "📈 Interpretasi Scatter Plot (", jenis, ")\n\n",
+        "Visualisasi scatter plot digunakan untuk melihat perubahan nilai dari tiap subjek sebelum dan sesudah perlakuan.\n",
+        "Tiap titik merepresentasikan pasangan nilai (sebelum, sesudah) untuk satu unit subjek.\n",
+        "Garis diagonal putus-putus (y = x) berfungsi sebagai acuan: jika nilai sebelum dan sesudah identik, maka titik berada tepat di garis ini.\n",
+        "• Titik di atas garis: nilai sesudah lebih besar → peningkatan\n",
+        "• Titik di bawah garis: nilai sesudah lebih kecil → penurunan\n\n",
+        "📌 Ringkasan Statistik:\n",
+        "- Median Sebelum Perlakuan: ", round(median_sebelum, 2), "\n",
+        "- Median Sesudah Perlakuan: ", round(median_sesudah, 2), "\n",
+        "- Arah Perubahan Umum: ", arah, "\n\n",
+        "Dengan memerhatikan persebaran titik terhadap garis diagonal, pengguna dapat menilai secara visual apakah terdapat tren pergeseran yang mendukung dugaan perbedaan secara statistik."
+      )
+      
+    } else if (uji == "Uji McNemar") {
+      tbl <- table(df[[input$var1_berpasangan]], df[[input$var2_berpasangan]])
+      kategori_sebelum <- rownames(tbl)
+      kategori_sesudah <- colnames(tbl)
+      
+      total <- sum(tbl)
+      tab_isi <- paste(
+        apply(tbl, 1, function(r) {
+          paste(names(r), r, sep = ": ", collapse = ", ")
+        }),
+        collapse = "\n"
+      )
+      
+      paste0(
+        "📊 Interpretasi Bar Plot (Uji McNemar)\n\n",
+        "Visualisasi bar plot pada Uji McNemar menggambarkan perubahan status kategorik yang terjadi dari kondisi sebelum ke sesudah pada subjek yang sama.\n",
+        "Plot ini membantu mengidentifikasi adanya pola ketidakseimbangan atau perubahan dalam proporsi antara dua waktu pengamatan.\n\n",
+        "• Jika batang diagonal (kategori tetap) lebih tinggi → tidak banyak perubahan\n",
+        "• Jika batang off-diagonal (kategori berubah) lebih tinggi → terjadi pergeseran signifikan\n\n",
+        "📌 Contoh Isi Tabel Kontingensi (2x2):\n",
+        tab_isi, "\n\n",
+        "Tabel ini menjadi dasar perhitungan Uji McNemar dan visualisasi ini memperjelas kecenderungan perubahan kategori dalam pasangan data."
+      )
+    }
+  })
+  
+  # PANEL 3: UJI DUA SAMPEL INDEPENDEN 
+  
+  # Fungsi baca file
+  baca_file <- function(input_file) {
+    ext <- tools::file_ext(input_file$name)
+    if (ext == "csv") {
+      read.csv(input_file$datapath)
+    } else {
+      readxl::read_excel(input_file$datapath)
+    }
+  }
+  
+  # Reactive untuk data
+  data_independen <- reactive({
+    req(input$file_data_nonpar)
+    baca_file(input$file_data_nonpar)
+  })
+  
+  # UI pilihan uji berdasarkan tipe data
+  output$uji_independen_ui <- renderUI({
+    req(input$tipe_data_independen)
+    
+    if (input$tipe_data_independen == "Nominal") {
+      selectInput("uji_independen", "Pilih Jenis Uji",
+                  choices = c("Uji Chi-Square", "Uji Fisher Exact"))
+    } else {
+      selectInput("uji_independen", "Pilih Jenis Uji",
+                  choices = c("Uji Median", "Uji Mann-Whitney", "Uji Kolmogorov-Smirnov", "Uji Wald-Wolfowitz Runs"))
+    }
+  })
+  
+  output$var1_independen_ui <- renderUI({
+    req(data_independen())
+    selectInput("var1_independen", "Pilih Variabel Nilai / Ukuran", choices = names(data_independen()))
+  })
+  
+  output$var2_independen_ui <- renderUI({
+    req(data_independen())
+    selectInput("var2_independen", "Pilih Variabel Kelompok", choices = names(data_independen()))
+  })
+  
+  # Tampilkan data dan ringkasan
+  output$preview_independen <- renderDT({
+    req(data_independen())
+    datatable(head(data_independen(), 10))
+  })
+  
+  output$summary_independen <- renderPrint({
+    req(data_independen())
+    summary(data_independen())
+  })
+  
+  # HIPOTESIS
+  output$hipotesis_independen <- renderUI({
+    req(input$uji_independen)
+    
+    teks <- switch(input$uji_independen,
+                   
+                   "Uji Mann-Whitney" = paste0(
+                     "<b>📌 Hipotesis Uji Mann-Whitney:</b><br><br>",
+                     "Uji ini digunakan untuk membandingkan distribusi dua kelompok independen dengan data numerik atau ordinal.<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Distribusi nilai dari kedua kelompok adalah sama (tidak ada perbedaan secara statistik).<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Terdapat perbedaan distribusi antara kedua kelompok.<br><br>"
+                   ),
+                   
+                   "Uji Median" = paste0(
+                     "<b>📌 Hipotesis Uji Median:</b><br><br>",
+                     "Uji ini digunakan untuk mengetahui apakah dua kelompok independen memiliki median yang berbeda secara signifikan.<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Median dari kedua kelompok adalah sama.<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Median dari kedua kelompok berbeda.<br><br>"
+                   ),
+                   
+                   "Uji Kolmogorov-Smirnov" = paste0(
+                     "<b>📌 Hipotesis Uji Kolmogorov-Smirnov:</b><br><br>",
+                     "Uji ini digunakan untuk membandingkan distribusi kumulatif dua kelompok independen (berbasis data numerik).<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Kedua kelompok memiliki distribusi yang identik.<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Terdapat perbedaan distribusi kumulatif antara dua kelompok.<br><br>"
+                   ),
+                   
+                   "Uji Wald-Wolfowitz Runs" = paste0(
+                     "<b>📌 Hipotesis Uji Wald-Wolfowitz Runs:</b><br><br>",
+                     "Uji ini digunakan untuk mengevaluasi apakah dua kelompok berasal dari populasi yang sama berdasarkan pola urutan nilai setelah digabungkan.<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Kedua sampel berasal dari populasi yang sama (pola run acak).<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Kedua sampel berasal dari populasi yang berbeda (pola run tidak acak).<br><br>"
+                   ),
+                   
+                   "Uji Chi-Square" = paste0(
+                     "<b>📌 Hipotesis Uji Chi-Square:</b><br><br>",
+                     "Digunakan untuk menguji hubungan antara dua variabel kategorik dalam tabel kontingensi (misalnya preferensi vs jenis kelamin).<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Tidak ada hubungan antara dua variabel kategorik (mereka independen).<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Ada hubungan atau asosiasi antara dua variabel kategorik.<br><br>"
+                   ),
+                   
+                   "Uji Fisher Exact" = paste0(
+                     "<b>📌 Hipotesis Uji Fisher Exact:</b><br><br>",
+                     "Uji ini digunakan khusus untuk tabel kontingensi 2x2 dengan frekuensi kecil untuk menguji keterkaitan antar dua variabel kategorik.<br><br>",
+                     "<b>H₀ (Hipotesis Nol):</b> Tidak ada asosiasi antara dua variabel (kejadian satu tidak memengaruhi lainnya).<br>",
+                     "<b>H₁ (Hipotesis Alternatif):</b> Terdapat asosiasi antara dua variabel kategorik.<br><br>"
+                   )
+    )
+    
+    HTML(teks)
+  })
+  
+  # PENJELASAN METODE
+  output$rumus_independen <- renderText({
+    req(input$uji_independen)
+    
+    switch(input$uji_independen,
+           
+           "Uji Mann-Whitney" = paste(
+             "🔧 *Uji Mann-Whitney U (dua sampel independen):*",
+             "1. Gabungkan kedua kelompok menjadi satu daftar nilai.",
+             "2. Urutkan seluruh nilai dan beri peringkat.",
+             "3. Hitung jumlah peringkat untuk masing-masing kelompok.",
+             "4. Gunakan rumus statistik U:",
+             "   U₁ = n₁·n₂ + (n₁·(n₁ + 1))/2 - R₁",
+             "   U₂ = n₁·n₂ + (n₂·(n₂ + 1))/2 - R₂",
+             "5. Ambil nilai U terkecil.",
+             "6. Bandingkan dengan distribusi U atau gunakan p-value.",
+             sep = "\n"
+           ),
+           
+           "Uji Median" = paste(
+             "🔧 *Uji Median:*",
+             "Digunakan untuk menguji apakah median dari dua sampel independen berbeda.",
+             "Langkah-langkah:",
+             "1. Gabungkan data dari dua kelompok.",
+             "2. Hitung median gabungan.",
+             "3. Hitung banyaknya nilai di atas/bawah median dari masing-masing kelompok.",
+             "4. Gunakan uji Chi-square untuk tabel 2x2 dari hasil tersebut.",
+             sep = "\n"
+           ),
+           
+           "Uji Kolmogorov-Smirnov" = paste(
+             "🔧 *Uji Kolmogorov-Smirnov Dua Sampel:*",
+             "Digunakan untuk membandingkan distribusi dua kelompok independen.",
+             "Langkah-langkah:",
+             "1. Hitung fungsi distribusi empiris (ECDF) masing-masing kelompok.",
+             "2. Hitung perbedaan maksimum absolut antar ECDF.",
+             "3. Nilai D = max|F₁(x) - F₂(x)|",
+             "4. Bandingkan nilai D dengan distribusi KS atau gunakan p-value.",
+             sep = "\n"
+           ),
+           
+           "Uji Wald-Wolfowitz Runs" = paste(
+             "🔧 *Uji Wald-Wolfowitz Runs:*",
+             "Uji nonparametrik untuk mengetahui apakah dua sampel berasal dari populasi yang sama.",
+             "Langkah-langkah:",
+             "1. Gabungkan dan urutkan data dua kelompok.",
+             "2. Tandai asal data (kelompok A atau B).",
+             "3. Hitung jumlah run (pergantian antar kelompok).",
+             "4. Gunakan distribusi normal aproksimasi atau p-value.",
+             sep = "\n"
+           ),
+           
+           "Uji Chi-Square" = paste(
+             "🔧 *Uji Chi-Square untuk Tabel Kontingensi:*",
+             "Digunakan untuk menguji hubungan antar dua variabel kategorik.",
+             "→ Rumus:  χ² = Σ((Oᵢ - Eᵢ)² / Eᵢ)",
+             "Langkah-langkah:",
+             "1. Buat tabel kontingensi dari dua variabel kategorik.",
+             "2. Hitung frekuensi harapan.",
+             "3. Hitung nilai χ².",
+             "4. Bandingkan nilai χ² dengan nilai kritis atau gunakan p-value.",
+             sep = "\n"
+           ),
+           
+           "Uji Fisher Exact" = paste(
+             "🔧 *Uji Fisher Exact:*",
+             "Digunakan untuk tabel kontingensi 2x2 dengan frekuensi kecil.",
+             "Langkah-langkah:",
+             "1. Buat tabel kontingensi 2x2.",
+             "2. Hitung probabilitas eksak dengan rumus kombinatorial.",
+             "3. Interpretasi menggunakan p-value.",
+             sep = "\n"
+           )
+    )
+  })
+  
+  # HASIL UJI STATISTIK
+  output$hasil_independen <- renderPrint({
+    req(data_independen(), input$var1_independen, input$var2_independen, input$uji_independen)
+    df <- data_independen()
+    var_x <- input$var1_independen
+    var_group <- input$var2_independen
+    uji <- input$uji_independen
+    
+    validate(need(length(unique(df[[var_group]])) == 2, "Variabel grup harus terdiri dari tepat dua kategori."))
+    
+    switch(uji,
+           "Uji Mann-Whitney" = wilcox.test(df[[var_x]] ~ df[[var_group]]),
+           "Uji Median" = coin::median_test(as.formula(paste(var_x, "~", var_group)), data = df),
+           "Uji Kolmogorov-Smirnov" = {
+             g1 <- df[[var_x]][df[[var_group]] == unique(df[[var_group]])[1]]
+             g2 <- df[[var_x]][df[[var_group]] == unique(df[[var_group]])[2]]
+             ks.test(g1, g2)
+           },
+           "Uji Wald-Wolfowitz Runs" = lawstat::runs.test(df[[var_x]], grouping = df[[var_group]]),
+           "Uji Chi-Square" = {
+             tbl <- table(df[[var_x]], df[[var_group]])
+             chisq.test(tbl)
+           },
+           "Uji Fisher Exact" = {
+             tbl <- table(df[[var_x]], df[[var_group]])
+             fisher.test(tbl)
+           }
+    ) |> print()
+  })
+  
+  # KESIMPULAN DAN INTERPRETASI
+  output$kesimpulan_independen <- renderUI({
+    req(data_independen(), input$var1_independen, input$var2_independen, input$uji_independen)
+    
+    df <- data_independen()
+    alpha <- input$alpha_independen
+    uji <- input$uji_independen
+    var_x <- input$var1_independen
+    var_group <- input$var2_independen
+    pval <- NA
+    interpretasi <- ""
+    uji_label <- ""
+    
+    if (uji == "Uji Mann-Whitney") {
+      hasil <- wilcox.test(df[[var_x]] ~ df[[var_group]])
+      pval <- hasil$p.value
+      interpretasi <- "terdapat perbedaan distribusi nilai antara dua kelompok independen"
+      uji_label <- "Uji Mann-Whitney"
+      
+    } else if (uji == "Uji Median") {
+      hasil <- coin::median_test(as.formula(paste(var_x, "~", var_group)), data = df)
+      pval <- coin::pvalue(hasil)
+      interpretasi <- "terdapat perbedaan median antara dua kelompok"
+      uji_label <- "Uji Median"
+      
+    } else if (uji == "Uji Kolmogorov-Smirnov") {
+      g1 <- df[[var_x]][df[[var_group]] == unique(df[[var_group]])[1]]
+      g2 <- df[[var_x]][df[[var_group]] == unique(df[[var_group]])[2]]
+      hasil <- ks.test(g1, g2)
+      pval <- hasil$p.value
+      interpretasi <- "terdapat perbedaan distribusi kumulatif antara dua kelompok"
+      uji_label <- "Uji Kolmogorov-Smirnov"
+      
+    } else if (uji == "Uji Wald-Wolfowitz Runs") {
+      hasil <- lawstat::runs.test(df[[var_x]], grouping = df[[var_group]])
+      pval <- hasil$p.value
+      interpretasi <- "terdapat ketidakteraturan urutan (runs) antara dua kelompok"
+      uji_label <- "Uji Wald-Wolfowitz Runs"
+      
+    } else if (uji == "Uji Chi-Square") {
+      tbl <- table(df[[var_x]], df[[var_group]])
+      hasil <- chisq.test(tbl)
+      pval <- hasil$p.value
+      interpretasi <- "terdapat asosiasi atau hubungan antara dua variabel kategorik"
+      uji_label <- "Uji Chi-Square"
+      
+    } else if (uji == "Uji Fisher Exact") {
+      tbl <- table(df[[var_x]], df[[var_group]])
+      hasil <- fisher.test(tbl)
+      pval <- hasil$p.value
+      interpretasi <- "terdapat asosiasi antara dua variabel kategorik dalam tabel 2x2"
+      uji_label <- "Uji Fisher Exact"
+    }
+    
+    if (!is.na(pval)) {
+      keputusan <- if (pval < alpha) {
+        "<span style='color:green; font-weight:bold;'>Tolak H₀</span><br><b>Kesimpulan:</b> Terdapat "
+      } else {
+        "<span style='color:orange; font-weight:bold;'>Gagal Tolak H₀</span><br><b>Kesimpulan:</b> Tidak terdapat cukup bukti untuk menyatakan bahwa "
+      }
+      
+      return(HTML(paste0(
+        "<b>", uji_label, "</b><br>",
+        "<b>P-value:</b> ", round(pval, 4), " | α = ", alpha, "<br>",
+        "<b>Keputusan:</b> ", keputusan, interpretasi, "."
+      )))
+    } else {
+      return(HTML("<span style='color:red;'>❌ P-value tidak tersedia. Pastikan data Anda sesuai dengan kriteria uji.</span>"))
+    }
+  })
+  
+  # VISUALISASI
+  output$plot_independen <- renderPlotly({
+    req(data_independen(), input$var1_independen, input$var2_independen, input$uji_independen)
+    df <- data_independen()
+    uji <- input$uji_independen
+    
+    if (uji %in% c("Uji Mann-Whitney", "Uji Median", "Uji Wald-Wolfowitz Runs")) {
+      p <- ggplot(df, aes_string(x = input$var2_independen, y = input$var1_independen, fill = input$var2_independen)) +
+        geom_boxplot(alpha = 0.7) + labs(title = paste("Boxplot:", uji)) + theme_minimal()
+    } else if (uji == "Uji Kolmogorov-Smirnov") {
+      p <- ggplot(df, aes_string(x = input$var1_independen, color = input$var2_independen)) +
+        stat_ecdf(geom = "step", size = 1.2) + labs(title = "Empirical CDF Plot") + theme_minimal()
+    } else {
+      tbl <- table(df[[input$var1_independen]], df[[input$var2_independen]])
+      tbl_df <- as.data.frame(tbl)
+      names(tbl_df) <- c("Kategori1", "Kategori2", "Frekuensi")
+      p <- ggplot(tbl_df, aes(x = Kategori1, y = Frekuensi, fill = Kategori2)) +
+        geom_bar(stat = "identity", position = "dodge") + labs(title = paste("Bar Plot:", uji)) + theme_minimal()
+    }
+    
+    ggplotly(p)
+  })
+  
+  # INTERPRETASI VISUALISASI – DUA SAMPEL INDEPENDEN
+  output$interpretasi_independen <- renderText({
+    req(data_independen(), input$var1_independen, input$var2_independen, input$uji_independen)
+    df <- data_independen()
+    uji <- input$uji_independen
+    
+    # Uji Ordinal (Boxplot / ECDF)
+    if (uji %in% c("Uji Mann-Whitney", "Uji Median", "Uji Wald-Wolfowitz Runs")) {
+      
+      if (!is.numeric(df[[input$var1_independen]])) {
+        df[[input$var1_independen]] <- as.numeric(as.character(df[[input$var1_independen]]))
+      }
+      
+      validate(need(is.numeric(df[[input$var1_independen]]),
+                    "❌ Variabel kuantitatif harus numerik untuk uji ini."))
+      
+      # Hitung median tiap kelompok
+      medians <- df %>%
+        group_by(across(all_of(input$var2_independen))) %>%
+        summarize(Median = median(.data[[input$var1_independen]], na.rm = TRUE), .groups = "drop")
+      
+      median_text <- paste0(apply(medians, 1, function(row) {
+        paste0("• ", row[[1]], ": Median = ", round(as.numeric(row[[2]]), 2))
+      }), collapse = "\n")
+      
+      paste0(
+        "📊 Interpretasi Boxplot (", uji, ")\n\n",
+        "Visualisasi boxplot digunakan untuk membandingkan sebaran nilai dari dua kelompok independen.\n",
+        "Fitur yang diamati:\n",
+        "• Garis median (di tengah box) menunjukkan nilai tengah dari masing-masing kelompok.\n",
+        "• Panjang box menunjukkan rentang interkuartil (variabilitas data).\n",
+        "• Whiskers dan outlier menginformasikan penyebaran dan ekstrem data.\n\n",
+        "Jika terdapat perbedaan yang mencolok pada posisi median atau bentuk sebaran, hal ini bisa menjadi indikasi awal adanya perbedaan statistik.\n\n",
+        "*📌 Ringkasan Median per Kelompok:*\n", median_text
+      )
+      
+    } else if (uji == "Uji Kolmogorov-Smirnov") {
+      
+      paste0(
+        "📈 Interpretasi ECDF Plot (Uji Kolmogorov-Smirnov)\n\n",
+        "Grafik ECDF (Empirical Cumulative Distribution Function) menunjukkan proporsi kumulatif data hingga titik tertentu.\n",
+        "Garis ECDF yang berbeda secara signifikan antara dua kelompok mengindikasikan perbedaan distribusi.\n",
+        "• Garis yang lebih curam → distribusi lebih terkonsentrasi.\n",
+        "• Jarak maksimum antar dua garis → indikator utama dalam uji KS (nilai D).\n\n",
+        "Jika kedua garis sering bertumpuk, maka distribusinya serupa. Jika tidak, ini mendukung dugaan bahwa kedua kelompok memiliki distribusi yang berbeda secara signifikan."
+      )
+      
+    } else if (uji %in% c("Uji Chi-Square", "Uji Fisher Exact")) {
+      
+      tbl <- table(df[[input$var1_independen]], df[[input$var2_independen]])
+      baris <- nrow(tbl)
+      kolom <- ncol(tbl)
+      
+      paste0(
+        "📊 Interpretasi Barplot (", uji, ")\n\n",
+        "Barplot untuk uji asosiasi kategorik memperlihatkan frekuensi dari kombinasi kategori antara dua variabel.\n",
+        "• Perbedaan tinggi batang pada masing-masing kategori mengindikasikan adanya ketidakseimbangan distribusi.\n",
+        "• Jika distribusi satu variabel sangat berbeda tergantung nilai variabel lain, maka ada indikasi adanya asosiasi.\n\n",
+        "Jumlah kategori yang dibandingkan:\n",
+        "- Baris (", input$var1_independen, "): ", baris, "\n",
+        "- Kolom (", input$var2_independen, "): ", kolom, "\n\n",
+        "Semakin ekstrem perbedaan antar batang, semakin kuat indikasi adanya hubungan antara kedua variabel kategorik."
+      )
+      
+    } else {
+      "❗ Uji tidak dikenali atau tidak didukung untuk interpretasi visualisasi."
+    }
+  })
+}
+
+
+shinyApp(ui = ui, server = server)  
